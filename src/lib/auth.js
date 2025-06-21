@@ -3,15 +3,15 @@ import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
 // Fonction pour connecter à MongoDB
+// Modifiez la connexion MongoDB pour Vercel
 async function connectToDatabase() {
-    const client = new MongoClient(process.env.MONGODB_URI, {
-        tls: true,
-        tlsInsecure: false,
+    if (mongoose.connections[0].readyState) return { db: mongoose.connection.db };
+
+    await mongoose.connect(process.env.MONGODB_URI, {
         serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 30000,
+        socketTimeoutMS: 45000
     });
-    await client.connect();
-    return { client, db: client.db('future_backoffice') };
+    return { db: mongoose.connection.db };
 }
 
 export const authOptions = {
