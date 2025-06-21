@@ -1,19 +1,28 @@
-import CredentialsProvider from 'next-auth/providers/credentials';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-// Fonction pour connecter à MongoDB
-// Modifiez la connexion MongoDB pour Vercel
 async function connectToDatabase() {
-    if (mongoose.connections[0].readyState) return { db: mongoose.connection.db };
+    if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is not defined');
+    }
 
-    await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 10000,
-        socketTimeoutMS: 45000
+    const client = new MongoClient(process.env.MONGODB_URI, {
+        tls: true,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 30000,
     });
-    return { db: mongoose.connection.db };
-}
 
+    try {
+        await client.connect();
+        return {
+            client,
+            db: client.db('future_backoffice')
+        };
+    } catch (error) {
+        console.error('MongoDB connection error:', error);
+        throw new Error('Database connection failed');
+    }
+}
 export const authOptions = {
     providers: [
         CredentialsProvider({
