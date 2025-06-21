@@ -19,24 +19,42 @@ export async function GET() {
     }
 }
 
-export async function PUT(request, { params }) {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-    }
-
-    const { id } = params;
-
-    if (!id) {
-        return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
-    }
-
-    await dbConnect();
-
+export async function POST(request) {
     try {
-        await Contact.findByIdAndUpdate(id, { status: 'completed' });
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
+        await dbConnect();
+        const body = await request.json();
+
+        // Validation des données requises selon le modèle Contact
+        const requiredFields = ['fullName', 'email', 'phoneNumber', 'message', 'type'];
+        const missingFields = requiredFields.filter(field => !body[field]);
+
+        if (missingFields.length > 0) {
+            return new Response(JSON.stringify({
+                error: 'Missing required fields',
+                missingFields
+            }), { status: 400 });
+        }
+
+        // Création du nouveau contact selon le modèle exact
+        const newContact = await Contact.create({
+            fullName: body.fullName,
+            email: body.email,
+            phoneNumber: body.phoneNumber,
+            message: body.message,
+            studyLevel: body.studyLevel || undefined, // non requis
+            type: body.type, // doit être 'contact' ou 'consultation'
+            status: 'pending' // valeur par défaut
+            // createdAt est ajouté automatiquement
+        });
+
+        return new Response(JSON.stringify(newContact), { status: 201 });
+
     } catch (error) {
-        return new Response(JSON.stringify({ error: 'Error updating contact' }), { status: 500 });
+        console.error('Error creating contact:', error);
+        return new Response(JSON.stringify({
+            error: 'Error creating contact',
+            details: error.message,
+            validationErrors: error.errors // si erreur de validation Mongoose
+        }), { status: 500 });
     }
 }

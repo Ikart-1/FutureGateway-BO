@@ -3,21 +3,6 @@ import { authOptions } from '@/lib/auth';
 import Contact from '@/lib/models/Contact';
 import dbConnect from '@/lib/db';
 
-export async function GET() {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-    }
-
-    await dbConnect();
-
-    try {
-        const contacts = await Contact.find({ status: 'pending' }).sort({ createdAt: -1 });
-        return new Response(JSON.stringify(contacts), { status: 200 });
-    } catch (error) {
-        return new Response(JSON.stringify({ error: 'Error fetching contacts' }), { status: 500 });
-    }
-}
 
 export async function PUT(request, { params }) {
     const session = await getServerSession(authOptions);

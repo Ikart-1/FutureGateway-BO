@@ -2,9 +2,10 @@
 module.exports = {
     darkMode: 'class',
     content: [
-        "./pages/**/*.{ts,tsx}",
-        "./components/**/*.{ts,tsx}",
-        "./app/**/*.{ts,tsx}",
+        "./pages/**/*.{js,ts,jsx,tsx}",
+        "./components/**/*.{js,ts,jsx,tsx}",
+        "./app/**/*.{js,ts,jsx,tsx}",
+        "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
         extend: {
@@ -14,20 +15,6 @@ module.exports = {
             colors: {
                 "primary-blue": "#0b3e67",
                 "primary-orange": "#f05722",
-            },
-            borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
-            },
-            keyframes: {
-                "pulse-green": {
-                    "0%, 100%": { opacity: "1" },
-                    "50%": { opacity: ".5" },
-                },
-            },
-            animation: {
-                "pulse-green": "pulse-green 2s infinite",
             },
         },
     },

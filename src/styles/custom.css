@@ -1,0 +1,54 @@
+/* Custom colors */
+.bg-primary {
+    background-color: #0b3e67 !important;
+}
+.bg-secondary {
+    background-color: #f05722 !important;
+}
+.text-secondary {
+    color: #f05722 !important;
+}
+.text-primary {
+    color: #0b3e67 !important;
+}
+
+.btn-light {
+    background-color: #f05722;
+    color: white;
+    border: none;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 100% !important;
+        position: relative !important;
+        height: auto !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .navbar {
+        position: relative !important;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-avatar {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 12px !important;
+    }
+
+    .table th, .table td {
+        padding: 0.5rem !important;
+        font-size: 0.875rem;
+    }
+}
