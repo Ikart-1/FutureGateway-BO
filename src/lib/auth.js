@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
+import CredentialsProvider from "next-auth/providers/credentials";
 
 async function connectToDatabase() {
     if (!process.env.MONGODB_URI) {
