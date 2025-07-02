@@ -1,41 +1,39 @@
-const { MongoClient } = require('mongodb');
-const bcrypt = require('bcryptjs');
-require('dotenv').config();
+// scripts/create-user.js
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import 'dotenv/config';
+import User from '../src/lib/models/User.js'; // Notez l'extension .js
 
 async function createUser() {
-    const client = new MongoClient(process.env.MONGODB_URI, {
-        tls: true,
-        tlsInsecure: false,
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 10000,
-    });
-
     try {
         console.log('Tentative de connexion à MongoDB...');
-        await client.connect();
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connexion réussie !');
-        const db = client.db();
 
-        // Hasher le mot de passe
-        const hashedPassword = await bcrypt.hash('password123', 12);
+        // Vérifier si l'utilisateur existe déjà
+        const existingUser = await User.findOne({ email: 'admin@future.com' });
+        if (existingUser) {
+            console.log('L\'utilisateur admin existe déjà');
+            return;
+        }
 
         // Créer l'utilisateur
-        const user = {
-            email: 'test@example.com',
-            password: hashedPassword,
-            name: 'Utilisateur Test',
-            createdAt: new Date()
-        };
+        const user = new User({
+            email: 'admin@future.com',
+            password: await bcrypt.hash('Ikart123', 12),
+            name: 'Admin Future',
+            role: 'admin'
+        });
 
-        const result = await db.collection('users').insertOne(user);
-        console.log('Utilisateur créé avec succès:', result.insertedId);
-        console.log('Email: test@example.com');
-        console.log('Mot de passe: password123');
+        await user.save();
+        console.log('Utilisateur admin créé avec succès !');
+        console.log('Email: admin@future.com');
+        console.log('Mot de passe: Ikart123');
 
     } catch (error) {
         console.error('Erreur:', error);
     } finally {
-        await client.close();
+        await mongoose.disconnect();
     }
 }
 

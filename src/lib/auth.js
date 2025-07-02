@@ -1,103 +1,91 @@
-import { MongoClient } from 'mongodb';
-import bcrypt from 'bcryptjs';
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import User from "@/lib/models/User";
+import dbConnect from "@/lib/db";
+import bcrypt from 'bcryptjs';
 
-async function connectToDatabase() {
-    if (!process.env.MONGODB_URI) {
-        throw new Error('MONGODB_URI is not defined');
-    }
-
-    const client = new MongoClient(process.env.MONGODB_URI, {
-        tls: true,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 30000,
-    });
-
-    try {
-        await client.connect();
-        return {
-            client,
-            db: client.db('future_backoffice')
-        };
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-        throw new Error('Database connection failed');
-    }
-}
-export const authOptions = {
+const authOptions = {
     providers: [
         CredentialsProvider({
-            name: 'credentials',
+            name: "Credentials",
             credentials: {
-                email: { label: 'Email', type: 'email' },
-                password: { label: 'Password', type: 'password' }
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error('Email et mot de passe requis');
-                }
-
                 try {
-                    const { client, db } = await connectToDatabase();
-                    const user = await db.collection('users').findOne({
-                        email: credentials.email
-                    });
+                    await dbConnect();
+                    const user = await User.findOne({ email: credentials.email });
 
-                    // Fermer la connexion
-                    await client.close();
+                    if (!user) return null;
 
-                    if (!user) {
-                        throw new Error('Aucun utilisateur trouvé avec cet email');
+                    const isValid = await bcrypt.compare(credentials.password, user.password);
+
+                    if (isValid) {
+                        return {
+                            id: user._id.toString(),
+                            email: user.email,
+                            name: user.name,
+                            role: user.role
+                        };
                     }
-
-                    // Vérifier le mot de passe
-                    const isValidPassword = await bcrypt.compare(
-                        credentials.password,
-                        user.password
-                    );
-
-                    if (!isValidPassword) {
-                        throw new Error('Mot de passe incorrect');
-                    }
-
-                    // Retourner l'utilisateur (sans le mot de passe)
-                    return {
-                        id: user._id.toString(),
-                        email: user.email,
-                        name: user.name || user.email
-                    };
+                    return null;
                 } catch (error) {
-                    console.error('Erreur d\'authentification:', error);
-                    throw new Error(error.message || 'Erreur d\'authentification');
+                    console.error('Authorization error:', error);
+                    return null;
                 }
             }
         })
     ],
     session: {
-        strategy: 'jwt',
+        strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 jours
     },
-    jwt: {
-        maxAge: 30 * 24 * 60 * 60, // 30 jours
+    secret: process.env.NEXTAUTH_SECRET,
+    cookies: {
+        sessionToken: {
+            name: `next-auth.session-token`,
+            options: {
+                path: '/',
+                sameSite: 'lax',
+                httpOnly: true,
+                secure: true,
+            },
+        },
+    },
+    events: {
+        signOut: () => {
+            console.log('Déconnexion effectuée');
+        }
     },
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
+                token.role = user.role;
+                token.email = user.email;
             }
             return token;
         },
         async session({ session, token }) {
-            if (token) {
-                session.user.id = token.id;
-            }
+            session.user.id = token.id;
+            session.user.role = token.role;
             return session;
+        },
+        async redirect({ url, baseUrl }) {
+            // Gère correctement les redirections relatives/absolues
+            if (url.startsWith('/')) return `${baseUrl}${url}`;
+            return url;
         }
     },
     pages: {
-        signIn: '/login',
-        error: '/login', // Rediriger les erreurs vers la page login
+        signIn: "/auth/login",
+        signOut: "/auth/login",
+        error: "/auth/login",
+        newUser: null // Désactive la page de nouveau compte
     },
-    secret: process.env.NEXTAUTH_SECRET,
-    debug: process.env.NODE_ENV === 'development',
 };
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST, authOptions };
+export const auth = () => NextAuth(authOptions);
