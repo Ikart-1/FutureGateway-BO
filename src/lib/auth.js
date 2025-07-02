@@ -15,12 +15,19 @@ const authOptions = {
             async authorize(credentials) {
                 try {
                     await dbConnect();
+                    console.log('Tentative de connexion avec:', credentials.email);
                     const user = await User.findOne({ email: credentials.email });
 
-                    if (!user) return null;
+                    if (!user) {
+                        console.log('Utilisateur non trouvé');
+                        return null;
+                    }
 
                     const isValid = await bcrypt.compare(credentials.password, user.password);
-
+                    if (!isValid) {
+                        console.log('Mot de passe incorrect');
+                        return null;
+                    }
                     if (isValid) {
                         return {
                             id: user._id.toString(),

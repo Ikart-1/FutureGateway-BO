@@ -1,41 +1,14 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-    reactStrictMode: true,
-
-    // Nouvelle configuration ajoutée
-    env: {
-        MONGODB_URI: process.env.MONGODB_URI,
-        NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
-    },
-
-    // Configuration des en-têtes de sécurité
+module.exports = {
     async headers() {
         return [
             {
-                source: '/(.*)',
+                source: '/api/:path*',
                 headers: [
-                    {
-                        key: 'X-DNS-Prefetch-Control',
-                        value: 'on'
-                    },
-                    {
-                        key: 'Strict-Transport-Security',
-                        value: 'max-age=63072000; includeSubDomains; preload'
-                    },
-                    {
-                        key: 'X-XSS-Protection',
-                        value: '1; mode=block'
-                    }
-                ],
-            },
-        ];
-    },
-
-    // Important pour NextAuth.js
-    images: {
-        domains: ['localhost'], // Ajoutez vos domaines d'images
-    },
-};
-
-module.exports = nextConfig;
+                    { key: 'Access-Control-Allow-Credentials', value: 'true' },
+                    { key: 'Access-Control-Allow-Origin', value: '*' },
+                    { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE' }
+                ]
+            }
+        ]
+    }
+}

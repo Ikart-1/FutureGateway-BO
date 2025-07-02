@@ -1,5 +1,7 @@
-export { default } from "next-auth/middleware";
+import { NextResponse } from 'next/server';
 
-export const config = {
-    matcher: ["/dashboard/:path*"]
-};
+export function middleware(request) {
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    return response;
+}
