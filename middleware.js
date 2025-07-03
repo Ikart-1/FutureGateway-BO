@@ -12,6 +12,7 @@ export function middleware(request) {
     const origin = request.headers.get('origin');
     const isAllowedOrigin = allowedOrigins.includes(origin);
 
+
     // Gestion des requêtes OPTIONS (preflight CORS)
     if (request.method === 'OPTIONS') {
         return new NextResponse(null, {
