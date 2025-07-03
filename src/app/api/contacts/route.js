@@ -57,3 +57,16 @@ export async function POST(request) {
         }), { status: 500 });
     }
 }
+
+// Ajoutez cette fonction à votre fichier route.js
+export async function OPTIONS(request) {
+    return new Response(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': 'https://www.futuregatewayedu.com',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
+            'Access-Control-Allow-Credentials': 'true',
+        },
+    });
+}
