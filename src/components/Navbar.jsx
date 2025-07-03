@@ -5,9 +5,8 @@ export default function Navbar() {
     const router = useRouter();
 
     const handleSignOut = () => {
-        // 1. Supprimer tous les cookies NextAuth
+        // Logout logic remains the same
         const cookies = document.cookie.split("; ");
-
         cookies.forEach(cookie => {
             if (cookie.startsWith('next-auth.') || cookie.startsWith('__Secure-next-auth.')) {
                 const [name] = cookie.split("=");
@@ -15,13 +14,11 @@ export default function Navbar() {
             }
         });
 
-        // 2. Supprimer tout le stockage local
         if (typeof window !== 'undefined') {
             localStorage.clear();
             sessionStorage.clear();
         }
 
-        // 3. Supprimer le cache du service worker (si utilisé)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(registrations => {
                 registrations.forEach(registration => registration.unregister());
@@ -31,27 +28,24 @@ export default function Navbar() {
             });
         }
 
-        // 4. Rediriger vers la page d'accueil avec rechargement complet
         window.location.href = '/';
     };
 
     return (
-        <nav className="navbar navbar-light bg-primary shadow-sm fixed-top">
-            <div className="container-fluid d-flex justify-content-between align-items-center px-3 px-lg-4 py-2">
-                <img
-                    src="/images/logo2.png"
-                    alt="Logo Future"
-                    height={40}
-                    className="ms-5"
-                    style={{ objectFit: 'contain' }}
-                />
+        <nav className="fixed top-0 left-64 right-0 bg-transparent  z-30 transition-all duration-200 ease-in-out lg:left-64">
+            <div className="flex justify-between items-center px-4 py-2">
+                <div className="w-64 lg:w-0"></div> {/* Espace réservé pour l'alignement */}
 
-                <button
-                    className="btn btn-outline-light btn-sm"
-                    onClick={handleSignOut}
-                >
-                    Déconnexion
-                </button>
+                <div className="flex-1 flex justify-between items-center">
+                    <div className="flex-1"></div> {/* Espace vide à gauche */}
+
+                    <button
+                        className="px-4 py-2 text-sm rounded-md border border-primary text-primary hover:bg-white hover:text-primary transition-colors"
+                        onClick={handleSignOut}
+                    >
+                        Déconnexion
+                    </button>
+                </div>
             </div>
         </nav>
     );

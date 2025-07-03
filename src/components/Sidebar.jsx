@@ -1,46 +1,50 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react'; // Importez useState
+import { useState } from 'react';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const [isOpen, setIsOpen] = useState(false); // Déclarez l'état isOpen
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <>
             <button
-                className="d-lg-none btn btn-light position-fixed  start-0 mt-3 m-2"
-                style={{ zIndex: 1100 }}
+                className="lg:hidden fixed top-3 left-2 z-50 p-2 rounded-md text-white bg-primary shadow-sm "
                 onClick={() => setIsOpen(!isOpen)}
             >
-                ☰
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
             </button>
             <div
-                className={`sidebar bg-secondary border-end vh-100 position-lg-fixed ${isOpen ? 'd-block' : 'd-none d-lg-block'}`}
-                style={{
-                    width: '260px',
-                    top: 0,
-                    left: 0,
-                    zIndex: 1000
-                }}
+                className={`fixed lg:static inset-y-0 left-0 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 w-64 bg-white border-r border-gray-200`}
             >
-                <div className="d-flex flex-column p-4 h-100 text-secondary">
-                    <div className="mb-4" style={{ height: '56px' }}></div>
-                    <nav className="nav flex-column">
+                <div className="flex flex-col h-full p-4 ">
+                    <div className="inline-flex items-center justify-center">
+                        <img
+                            src="/images/logo.png"
+                            alt="Mini Logo"
+                            className="h-[60px] w-auto max-w-none" // 6px de haut
+                            style={{
+                                imageRendering: 'crisp-edges', // Pour une meilleure netteté
+                                objectFit: 'contain'
+                            }}
+                        />
+                    </div>
+                    <nav className="space-y-1 mt-6 ">
                         <Link
                             href="/dashboard/contacts"
-                            className={`nav-link d-flex align-items-center px-3 py-2 rounded ${
+                            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
                                 pathname.includes('/dashboard/contacts')
-                                    ? 'active bg-light text-primary fw-semibold'
-                                    : 'text-dark'
+                                    ? 'bg-primary/10 text-primary font-semibold'
+                                    : 'text-gray-700 hover:bg-gray-100'
                             }`}
                         >
                             <svg
-                                className="me-2"
-                                style={{ width: '20px', height: '20px' }}
+                                className="mr-3 h-5 w-5"
                                 fill="none"
-                                stroke="#0b3e67"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
                                 <path

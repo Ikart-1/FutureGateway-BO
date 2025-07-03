@@ -3,24 +3,42 @@ import { useEffect, useState } from 'react';
 import ContactModal from '@/components/ContactModal';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import { useToast } from '@/hooks/use-toast';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export default function ContactsPage() {
     const [contacts, setContacts] = useState([]);
+    const [filteredContacts, setFilteredContacts] = useState([]);
     const [selectedContact, setSelectedContact] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const { toast } = useToast();
 
     useEffect(() => {
         fetchContacts();
     }, []);
 
+    useEffect(() => {
+        // Filtrer les contacts lorsque searchTerm ou contacts changent
+        const filtered = contacts.filter(contact =>
+            contact.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredContacts(filtered);
+    }, [searchTerm, contacts]);
+
     const fetchContacts = async () => {
         try {
+            setIsLoading(true);
             const res = await fetch('/api/contacts');
             const data = await res.json();
             setContacts(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error fetching contacts:', error);
             setContacts([]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -31,122 +49,191 @@ export default function ContactsPage() {
 
     const handleComplete = async () => {
         try {
-            await fetch(`/api/contacts/${selectedContact._id}`, {
+            const response = await fetch(`/api/contacts/${selectedContact._id}`, {
                 method: 'PUT',
             });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors du traitement du contact');
+            }
+
             setIsModalOpen(false);
-            fetchContacts(); // Refresh the list
+            await fetchContacts();
+
+            toast({
+                title: 'Succès',
+                description: 'Le contact a été marqué comme traité avec succès.',
+                variant: 'default',
+            });
         } catch (error) {
             console.error('Error completing contact:', error);
+            toast({
+                title: 'Échec',
+                description: error.message || 'Une erreur est survenue lors du traitement du contact',
+                variant: 'destructive',
+            });
         }
     };
 
-    return (
-        <div className="d-flex flex-column flex-lg-row min-vh-100 bg-light">
-            <Sidebar />
-            <div className="flex-fill main-content">
-                <Navbar />
-                <main className="p-3 p-lg-4" style={{ marginTop: '56px' }}>
-                    <div className="container-fluid">
-                        <h1 className="h2 fw-bold mb-4 text-primary">Demandes de contact</h1>
-                        <div className="card shadow-sm">
-                            <div className="card-body p-0 text-primary">
-                                <div className="table-responsive">
-                                    <table className="table table-hover mb-0">
-                                        <thead className="table-light">
-                                        <tr>
-                                            <th scope="col" className="px-4 py-3 text-uppercase fw-semibold text-primary small">
-                                                Nom
-                                            </th>
-                                            <th scope="col" className="px-4 py-3 text-uppercase fw-semibold text-primary small">
-                                                Email
-                                            </th>
-                                            <th scope="col" className="px-4 py-3 text-uppercase fw-semibold text-primary small">
-                                                Téléphone
-                                            </th>
-                                            <th scope="col" className="px-4 py-3 text-uppercase fw-semibold text-primary small">
-                                                Type
-                                            </th>
-                                            <th scope="col" className="px-4 py-3 text-uppercase fw-semibold text-primary small">
-                                                Date
-                                            </th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {contacts.map((contact) => (
-                                            <tr
-                                                key={contact._id}
-                                                className="cursor-pointer"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => handleContactClick(contact)}
-                                            >
-                                                <td className="px-4 py-3">
-                                                    <div className="d-flex align-items-center">
-                                                        <div
-                                                            className="bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                                                            style={{
-                                                                width: '40px',
-                                                                height: '40px',
-                                                                fontSize: '14px',
-                                                                borderRadius: '50%',
-                                                                flexShrink: 0,
-                                                            }}
-                                                        >
-                                                            {contact.fullName.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <span className="fw-medium">{contact.fullName}</span>
-                                                    </div>
-                                                </td>
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
 
-                                                <td className="px-4 py-3">
-                                                    <a
-                                                        href={`mailto:${contact.email}`}
-                                                        className="text-decoration-none text-primary"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        {contact.email}
-                                                    </a>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <a
-                                                        href={`tel:${contact.phoneNumber}`}
-                                                        className="text-decoration-none text-dark"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        {contact.phoneNumber}
-                                                    </a>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                        <span
-                                                            className={`badge rounded-pill px-3 py-2 ${
-                                                                contact.type === 'contact'
-                                                                    ? 'text-white bg-secondary bg-opacity-10'
-                                                                    : 'text-white bg-primary bg-opacity-10'
-                                                            }`}
+    // Skeleton loader component
+    const SkeletonRow = () => (
+        <tr className="animate-pulse">
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200"></div>
+                    <div className="ml-3">
+                        <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </div>
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="h-4 bg-gray-200 rounded w-40"></div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="h-4 bg-gray-200 rounded w-24"></div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+            </td>
+        </tr>
+    );
+
+    return (
+        <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
+            <Sidebar />
+            <div className="flex-1">
+                <Navbar />
+                <main className="p-4 lg:p-6 mt-14">
+                    <div className="container mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                            <h1 className="text-2xl font-bold text-primary">Demandes de contact</h1>
+
+                            {/* Barre de recherche */}
+                            <div className="relative w-full md:w-64">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    type="text"
+                                    className="w-full pl-10 pr-4 py-2 border-gray-200 focus:border-primary focus:ring-primary transition-colors"
+                                    placeholder="Rechercher par nom..."
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Nom
+                                        </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Email
+                                        </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Téléphone
+                                        </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Type
+                                        </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Date
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    {isLoading ? (
+                                        // Show 5 skeleton rows while loading
+                                        Array(5).fill(0).map((_, index) => (
+                                            <SkeletonRow key={index} />
+                                        ))
+                                    ) : (
+                                        // Show actual data when loaded
+                                        <>
+                                            {filteredContacts.map((contact) => (
+                                                <tr
+                                                    key={contact._id}
+                                                    className="hover:bg-gray-50 cursor-pointer"
+                                                    onClick={() => handleContactClick(contact)}
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center">
+                                                            <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
+                                                                {contact.fullName.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="ml-3">
+                                                                <span className="font-medium text-gray-900">{contact.fullName}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <a
+                                                            href={`mailto:${contact.email}`}
+                                                            className="text-primary hover:underline"
+                                                            onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            {contact.type === 'contact' ? 'Contact' : 'Consultation'}
-                                                        </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-muted">
-                                                    {new Date(contact.createdAt).toLocaleDateString('fr-FR', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        year: 'numeric'
-                                                    })}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {contacts.length === 0 && (
-                                            <tr>
-                                                <td colSpan="5" className="text-center py-5 text-secondary">
-                                                    <i className="bi bi-inbox display-4 d-block mb-3"></i>
-                                                    <p className="mb-0">Aucune demande de contact pour le moment</p>
-                                                </td>
-                                            </tr>
-                                        )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                            {contact.email}
+                                                        </a>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <a
+                                                            href={`tel:${contact.phoneNumber}`}
+                                                            className="text-gray-900 hover:underline"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {contact.phoneNumber}
+                                                        </a>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span
+                                                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                                                    contact.type === 'contact'
+                                                                        ? 'bg-gray-100 text-gray-800'
+                                                                        : 'bg-primary/10 text-primary'
+                                                                }`}
+                                                            >
+                                                                {contact.type === 'contact' ? 'Contact' : 'Consultation'}
+                                                            </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                        {new Date(contact.createdAt).toLocaleDateString('fr-FR', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {filteredContacts.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                                        <div className="flex flex-col items-center justify-center text-gray-400">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                            </svg>
+                                                            <p className="text-sm">
+                                                                {searchTerm ?
+                                                                    'Aucun résultat trouvé pour votre recherche' :
+                                                                    'Aucune demande de contact pour le moment'}
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </>
+                                    )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
