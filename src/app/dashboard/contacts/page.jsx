@@ -16,6 +16,10 @@ export default function ContactsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const { toast } = useToast();
 
+    // État pour la pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
     useEffect(() => {
         fetchContacts();
     }, []);
@@ -26,7 +30,14 @@ export default function ContactsPage() {
             contact.fullName.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setFilteredContacts(filtered);
+        setCurrentPage(1); // Réinitialiser à la première page lors d'une nouvelle recherche
     }, [searchTerm, contacts]);
+
+    // Calcul des contacts paginés
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredContacts.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
 
     const fetchContacts = async () => {
         try {
@@ -78,6 +89,11 @@ export default function ContactsPage() {
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
+
+    // Fonctions de pagination
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
     // Skeleton loader component
     const SkeletonRow = () => (
@@ -159,7 +175,7 @@ export default function ContactsPage() {
                                     ) : (
                                         // Show actual data when loaded
                                         <>
-                                            {filteredContacts.map((contact) => (
+                                            {currentItems.map((contact) => (
                                                 <tr
                                                     key={contact._id}
                                                     className="hover:bg-gray-50 cursor-pointer"
@@ -235,6 +251,46 @@ export default function ContactsPage() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination */}
+                            {filteredContacts.length > 0 && !isLoading && (
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                                    <div className="text-sm text-gray-500">
+                                        Affichage de <span className="font-medium">{indexOfFirstItem + 1}</span> à{' '}
+                                        <span className="font-medium">
+                                            {Math.min(indexOfLastItem, filteredContacts.length)}
+                                        </span>{' '}
+                                        sur <span className="font-medium">{filteredContacts.length}</span> résultats
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={prevPage}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-1 rounded-md border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            Précédent
+                                        </button>
+                                        <div className="flex space-x-1">
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                                                <button
+                                                    key={number}
+                                                    onClick={() => paginate(number)}
+                                                    className={`px-3 py-1 rounded-md ${currentPage === number ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                                >
+                                                    {number}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={nextPage}
+                                            disabled={currentPage === totalPages}
+                                            className={`px-3 py-1 rounded-md border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            Suivant
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </main>
